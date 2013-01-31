@@ -3,10 +3,10 @@
 /// <reference path="../json2.js" />
 
 /*!
-* of.servers.messaging.js - Cross-Frame Messaging Library v0.1
-* Released under the MIT license
-* @author Travis Sharp - furiousscissors@gmail.com
-*/
+ * of.servers.messaging.js - Cross-Frame Messaging Library v0.1
+ * Released under the MIT license
+ * @author Travis Sharp - furiousscissors@gmail.com
+ */
 
 defOnce('OF.Servers.MessageEvent', function () {
     function MessageEvent(eName, eData) {
@@ -62,32 +62,22 @@ defOnce('OF.Servers.MessageServer', function () {
             return this;
         };
 
-        this.send = function (name, data) {
+        this.send = function (name, data, toSelf) {
             try {
-                if(typeof client.postMessage === 'function') {
-                    /*
-                    if(synchronized) {
-                        // Push all backed up messages.
-                        if(name === 'PUSH') {
-                            var key = null;
-                            for(var key in messagebuffer) {
-                                client.postMessage(JSON.stringify(messagebuffer[key], '*'));
-                            }
-
-                            messagebuffer = [];
-                        } else {
-                            client.postMessage(JSON.stringify(new OF.Servers.MessageEvent(name, data)), '*');
-                        }
+                if (toSelf === true) {
+                    if (typeof window.postMessage !== 'undefined') {
+                        window.postMessage(JSON.stringify(new OF.Servers.MessageEvent(name, data)), '*');
                     } else {
-                        messagebuffer.push(JSON.stringify(new OF.Servers.MessageEvent(name, data)));
+                        OF.Core.Log.e('OF.Servers.MessageServer', 'Current window does not have a postMessage property - unable to post message.');
                     }
-                    */
-
-                    client.postMessage(JSON.stringify(new OF.Servers.MessageEvent(name, data)), '*');
                 } else {
-                    OF.Core.Log.e('OF.Servers.MessageServer', 'Client does not have a postMessage property - unable to post message.');
+                    if (typeof client.postMessage !== 'undefined') {
+                        client.postMessage(JSON.stringify(new OF.Servers.MessageEvent(name, data)), '*');
+                    } else {
+                        OF.Core.Log.e('OF.Servers.MessageServer', 'Client does not have a postMessage property - unable to post message.');
+                    }
                 }
-            }catch(ex) {
+            } catch (ex) {
                 OF.Core.Log.e('OF.Servers.MessageServer', ex);
             }
         };
@@ -107,7 +97,12 @@ defOnce('OF.Servers.MessageServer', function () {
         }
 
         function registerWindowHandler() {
-            window.addEventListener("message", receiveMessage, false);
+            if (typeof window.addEventListener !== 'undefined') {
+                window.addEventListener('message', receiveMessage, false);
+            } else {
+                // Support for ie8
+                window.attachEvent('onmessage', receiveMessage);
+            }
         }
 
         this.init = function () {
@@ -124,28 +119,12 @@ defOnce('OF.Servers.MessageServer', function () {
                 builder.append(" received echo: ");
                 builder.append(message.data);
 
-                if(echoAlert === true) {
+                if (echoAlert === true) {
                     alert(builder.toString());
                 }
 
                 OF.Core.Log.i(builder.toString());
             });
-
-            /*
-            this.subscribe('ACK', function (message) {
-                server.notify('SYN ACK');
-            });
-
-            this.subscribe('SYN ACK', function (message) {
-                server.notify('SYN');
-            });
-
-            this.subscribe('SYN', function (message) {
-                server.notify('PUSH');
-            });
-
-            server.notify('SYN');
-            */
         };
     };
 
