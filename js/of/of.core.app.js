@@ -15,6 +15,11 @@ defOnce("OF.Core.App", function () {
         /** Inherited Classes */
         OF.Core.inherits(OF.Core.IDisposable, this);
         OF.Core.inherits(OF.Core.IObservable, this);
+        var self = this;
+
+        if (OF.Core.TemplateManager !== undefined && OF.Core.TemplateManager !== null) {
+            self.templateManager = new OF.Core.TemplateManager();
+        }
 
         /**
         * Private Variables
@@ -24,7 +29,7 @@ defOnce("OF.Core.App", function () {
         /**
         * Internal Methods
         */
-        this.getName = function getName() {
+        self.getName = function getName() {
             return appName;
         };
     }
