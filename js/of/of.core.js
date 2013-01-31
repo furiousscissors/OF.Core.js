@@ -181,7 +181,7 @@ defOnce("OF.Core.IDisposable", function () {
     function IDisposable() {
         var disposed = false;
 
-        this.dispose = function () {
+        this.superDispose = function () {
             disposed = true;
         };
 
@@ -194,10 +194,9 @@ defOnce("OF.Core.IDisposable", function () {
 });
 
 defOnce("OF.Core.IObservable", function () {
-    function EventHandler(eventName, callback, disposableObject) {
+    function EventHandler(eventName, callback) {
         this.eventName = eventName;
         this.callback = callback;
-        this.disposableObject = disposableObject;
     }
 
     /**
@@ -223,12 +222,9 @@ defOnce("OF.Core.IObservable", function () {
         * @param disposableObject This is a reference back to the original observer, a disposableObject.
         * @return {this}
         */
-        this.subscribe = function (eventName, callback, disposableObject) {
-            OF.Core.assert((disposableObject !== null || disposableObject !== undefined) ||
-                typeof disposableObject.isDisposed !== "function",
-                "Observable.subscribe", "You must specify a disposable object.");
+        this.subscribe = function (eventName, callback) {
             events[eventName] = events[eventName] || [];
-            events[eventName].push(new EventHandler(eventName, callback, disposableObject));
+            events[eventName].push(new EventHandler(eventName, callback));
             // Enable chaining
             return this;
         };
@@ -237,6 +233,20 @@ defOnce("OF.Core.IObservable", function () {
             events[eventName] = events[eventName] || [];
             // Enable chaining
             return this;
+        };
+
+        this.unsubscribe = function (eventName, callback) {
+            var handlers = events[eventName];
+            if (handlers) {
+                events[eventName].splice(callback);
+            }
+        };
+
+        /**
+         * Removes entire event chain
+         */
+        this.unregister = function (eventName) {
+            events[eventName] = null;
         };
 
         /**
@@ -253,17 +263,7 @@ defOnce("OF.Core.IObservable", function () {
             if (handlers) {
                 args = Array.prototype.slice.call(arguments, 1);
                 for (i = 0; i < handlers.length; i++) {
-                    if (handlers[i].disposableObject.isDisposed()) {
-                        toRemove.push(handlers[i]);
-                    } else {
-                        handlers[i].callback.apply(null, args);
-
-                    }
-                    if (toRemove.length > 0) {
-                        for (i = 0; i < toRemove.length; i++) {
-                            events[eventName].splice(toRemove[i]);
-                        }
-                    }
+                    handlers[i].callback.apply(null, args);
                 }
             }
             // Enable chaining

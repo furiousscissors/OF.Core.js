@@ -1,12 +1,8 @@
-﻿/// <reference path="defonce.js" />
-/// <reference path="of.core.js" />
-/// <reference path="../json2.js" />
-
-/*!
- * of.servers.messaging.js - Cross-Frame Messaging Library v0.1
- * Released under the MIT license
- * @author Travis Sharp - furiousscissors@gmail.com
- */
+﻿/*!
+* of.servers.messaging.js - Cross-Frame Messaging Library v0.1
+* Released under the MIT license
+* @author Travis Sharp - furiousscissors@gmail.com
+*/
 
 defOnce('OF.Servers.MessageEvent', function () {
     function MessageEvent(eName, eData) {
@@ -107,17 +103,19 @@ defOnce('OF.Servers.MessageServer', function () {
 
         this.init = function () {
             registerWindowHandler();
-            if ($('#client-app').length === 1) {
-                client = $('#client-app')[0].contentWindow;
+            if ($('#message-client-context').length === 1) {
+                client = $('#message-client-context')[0].contentWindow;
+                OF.Core.Log.d('of.servers.messaging.init', 'Messaging Setup In Server Mode');
             } else {
                 client = window.parent;
+                OF.Core.Log.d('of.servers.messaging.init', 'Messaging Setup In Client Mode');
             }
 
             this.subscribe('echo', function (message) {
                 var builder = new OF.Core.StringBuilder();
                 builder.append(serverName);
                 builder.append(" received echo: ");
-                builder.append(message.data);
+                builder.append(JSON.stringify(message.data));
 
                 if (echoAlert === true) {
                     alert(builder.toString());
