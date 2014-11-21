@@ -1,27 +1,21 @@
 ﻿/*!
-* of.servers.messaging.js - Cross-Frame Messaging Library v0.1
+* of/window.messaging.js - Cross-Frame Messaging Library v0.2
 * Released under the MIT license
 * @author Travis Sharp - furiousscissors@gmail.com
 */
 
-defOnce('OF.Servers.MessageEvent', function () {
+(function() {
+
     function MessageEvent(eName, eData) {
         this.name = eName,
             this.data = eData;
     }
-    return MessageEvent;
-});
 
-defOnce('OF.Servers.MessageHandler', function () {
-    function FrameHandler(messageName, callback) {
+    function MessageHandler(messageName, callback) {
         this.messageName = messageName,
             this.callback = callback;
     }
 
-    return FrameHandler;
-});
-
-defOnce('OF.Servers.MessageServer', function () {
     function MessageServer(serverName) {
         var serverName = serverName,
             events = [],
@@ -32,7 +26,7 @@ defOnce('OF.Servers.MessageServer', function () {
 
         this.subscribe = function (eventName, callback) {
             events[eventName] = events[eventName] || [];
-            events[eventName].push(new OF.Servers.MessageHandler(eventName, callback));
+            events[eventName].push(new MessageHandler(eventName, callback));
             // Enable chaining
             return this;
         };
@@ -62,19 +56,19 @@ defOnce('OF.Servers.MessageServer', function () {
             try {
                 if (toSelf === true) {
                     if (typeof window.postMessage !== 'undefined') {
-                        window.postMessage(JSON.stringify(new OF.Servers.MessageEvent(name, data)), '*');
+                        window.postMessage(JSON.stringify(new MessageEvent(name, data)), '*');
                     } else {
-                        OF.Core.Log.e('OF.Servers.MessageServer', 'Current window does not have a postMessage property - unable to post message.');
+                        // OF.Core.Log.e('OF.Servers.MessageServer', 'Current window does not have a postMessage property - unable to post message.');
                     }
                 } else {
                     if (typeof client.postMessage !== 'undefined') {
-                        client.postMessage(JSON.stringify(new OF.Servers.MessageEvent(name, data)), '*');
+                        client.postMessage(JSON.stringify(new MessageEvent(name, data)), '*');
                     } else {
-                        OF.Core.Log.e('OF.Servers.MessageServer', 'Client does not have a postMessage property - unable to post message.');
+                        // OF.Core.Log.e('OF.Servers.MessageServer', 'Client does not have a postMessage property - unable to post message.');
                     }
                 }
             } catch (ex) {
-                OF.Core.Log.e('OF.Servers.MessageServer', ex);
+                // OF.Core.Log.e('OF.Servers.MessageServer', ex);
             }
         };
 
@@ -101,18 +95,19 @@ defOnce('OF.Servers.MessageServer', function () {
             }
         }
 
-        this.init = function () {
+        this.init = function (context) {
             registerWindowHandler();
-            if ($('#message-client-context').length === 1) {
-                client = $('#message-client-context')[0].contentWindow;
-                OF.Core.Log.d('of.servers.messaging.init', 'Messaging Setup In Server Mode');
+            if (context != null && context.length > 0 & $(context).length === 1) {
+                client = $(context)[0].contentWindow;
+                // OF.Core.Log.d('of.servers.messaging.init', 'Messaging Setup In Server Mode');
+                console.log('Messaging Setup In Server Mode');
             } else {
                 client = window.parent;
-                OF.Core.Log.d('of.servers.messaging.init', 'Messaging Setup In Client Mode');
+                console.log('Messaging Setup In Client Mode');
             }
 
             this.subscribe('echo', function (message) {
-                var builder = new OF.Core.StringBuilder();
+                var builder = new (require('of/string.buffer'))();
                 builder.append(serverName);
                 builder.append(" received echo: ");
                 builder.append(JSON.stringify(message.data));
@@ -121,10 +116,12 @@ defOnce('OF.Servers.MessageServer', function () {
                     alert(builder.toString());
                 }
 
-                OF.Core.Log.i(builder.toString());
+                // OF.Core.Log.i(builder.toString());
             });
         };
     };
 
-    return MessageServer;
-});
+    define(['of/string.buffer'], function() {
+        return Object.seal(MessageServer);
+    })
+})();
